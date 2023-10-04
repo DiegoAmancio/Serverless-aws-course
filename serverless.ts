@@ -1,6 +1,6 @@
 import type { AWS } from "@serverless/typescript";
 
-import hello from "@functions/hello";
+import hello from "@functions/createAuction";
 
 const serverlessConfiguration: AWS = {
   service: "curso-aws",
@@ -9,7 +9,6 @@ const serverlessConfiguration: AWS = {
   provider: {
     name: "aws",
     runtime: "nodejs14.x",
-    region: "us-east-1",
     apiGateway: {
       minimumCompressionSize: 1024,
       shouldStartNameWithService: true,
