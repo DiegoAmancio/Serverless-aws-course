@@ -2,6 +2,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
+      "@resources/*": ["resources/*"],
+      "@iam/*": ["iam/*"],
       "@functions/*": ["src/functions/*"],
       "@libs/*": ["src/libs/*"]
     }

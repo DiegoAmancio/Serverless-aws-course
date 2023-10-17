@@ -1,6 +1,8 @@
 import type { AWS } from "@serverless/typescript";
 
 import createAuction from "@functions/createAuction";
+import auctionsTable from "@resources/auctionsTable";
+import auctionsTableIam from "@iam/auctionsTableIam";
 
 const serverlessConfiguration: AWS = {
   service: "curso-aws",
@@ -9,7 +11,8 @@ const serverlessConfiguration: AWS = {
   provider: {
     name: "aws",
     runtime: "nodejs14.x",
-
+    region: "us-east-1",
+    stage: "${opt:stage, 'dev'}",
     apiGateway: {
       minimumCompressionSize: 1024,
       shouldStartNameWithService: true,
@@ -17,44 +20,21 @@ const serverlessConfiguration: AWS = {
     environment: {
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1",
       NODE_OPTIONS: "--enable-source-maps --stack-trace-limit=1000",
+      AUCTIONS_TABLE_NAME: {
+        Ref: "AuctionsTable",
+      },
     },
     iam: {
       role: {
-        statements: [
-          {
-            Effect: "Allow",
-            Action: ["dynamodb:PutItem"],
-            Resource:
-              "arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/AuctionsTable",
-          },
-        ],
+        statements: [auctionsTableIam],
       },
     },
   },
   resources: {
     Resources: {
-      AuctionsTable: {
-        Type: "AWS::DynamoDB::Table",
-        Properties: {
-          TableName: "AuctionsTable",
-          BillingMode: "PAY_PER_REQUEST",
-          AttributeDefinitions: [
-            {
-              AttributeName: "id",
-              AttributeType: "S",
-            },
-          ],
-          KeySchema: [
-            {
-              AttributeName: "id",
-              KeyType: "HASH",
-            },
-          ],
-        },
-      },
+      AuctionsTable: auctionsTable,
     },
   },
-  // import the function via paths
   functions: { createAuction },
   package: { individually: true },
   custom: {
