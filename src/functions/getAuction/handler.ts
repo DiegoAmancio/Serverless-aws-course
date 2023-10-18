@@ -9,26 +9,27 @@ import { InternalServerError, NotFound } from "http-errors";
 
 const dynamoDB = new DynamoDB.DocumentClient();
 
-const getAuction: ValidatedEventAPIGatewayProxyEvent<any> = async (event) => {
-  const { id } = event.pathParameters;
-  console.log(event.pathParameters);
-  let auction;
+export const getAuctionById = async (id: String) => {
   try {
-    auction = await dynamoDB
+    const auction = await dynamoDB
       .get({
         TableName: process.env.AUCTIONS_TABLE_NAME,
         Key: { id },
       })
       .promise();
+    if (!auction) {
+      throw new NotFound(`Auction with ID ${id} not found`);
+    }
+
+    return auction.Item;
   } catch (error) {
     throw new InternalServerError(error);
   }
+};
+const getAuction: ValidatedEventAPIGatewayProxyEvent<any> = async (event) => {
+  const { id } = event.pathParameters;
 
-  if (!auction) {
-    throw new NotFound(`Auction with ID ${id} not found`);
-  }
-
-  return formatJSONResponse(auction, 201);
+  return formatJSONResponse(await getAuctionById(id), 201);
 };
 
 export const main = middyfy(getAuction);

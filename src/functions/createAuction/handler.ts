@@ -20,6 +20,9 @@ const createAuction: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (
     title,
     status: AuctionStatus.OPEN,
     createdAt: now.toISOString(),
+    highestBid: {
+      amount: 0,
+    },
   };
 
   try {
