@@ -1,5 +1,5 @@
 export default {
   Effect: "Allow",
-  Action: ["dynamodb:PutItem"],
+  Action: ["dynamodb:PutItem", "dynamodb:Scan"],
   Resource: [{ "Fn::GetAtt": ["AuctionsTable", "Arn"] }],
 };

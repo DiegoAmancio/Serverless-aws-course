@@ -5,6 +5,7 @@ import { v4 as uuid } from "uuid";
 import { DynamoDB } from "aws-sdk";
 import schema from "./schema";
 import { AuctionStatus } from "./status.enum";
+import { InternalServerError } from "http-errors";
 
 const dynamoDB = new DynamoDB.DocumentClient();
 
@@ -21,12 +22,16 @@ const createAuction: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (
     createdAt: now.toISOString(),
   };
 
-  await dynamoDB
-    .put({
-      TableName: process.env.AUCTIONS_TABLE_NAME,
-      Item: auction,
-    })
-    .promise();
+  try {
+    await dynamoDB
+      .put({
+        TableName: process.env.AUCTIONS_TABLE_NAME,
+        Item: auction,
+      })
+      .promise();
+  } catch (error) {
+    throw new InternalServerError(error);
+  }
 
   return formatJSONResponse(auction, 201);
 };
