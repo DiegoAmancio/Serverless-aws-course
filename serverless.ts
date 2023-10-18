@@ -4,6 +4,7 @@ import createAuction from "@functions/createAuction";
 import auctionsTable from "@resources/auctionsTable";
 import auctionsTableIam from "@iam/auctionsTableIam";
 import getAuctions from "@functions/getAuctions";
+import getAuction from "@functions/getAuction";
 
 const serverlessConfiguration: AWS = {
   service: "curso-aws",
@@ -36,7 +37,7 @@ const serverlessConfiguration: AWS = {
       AuctionsTable: auctionsTable,
     },
   },
-  functions: { createAuction, getAuctions },
+  functions: { createAuction, getAuctions, getAuction },
   package: { individually: true },
   custom: {
     esbuild: {
