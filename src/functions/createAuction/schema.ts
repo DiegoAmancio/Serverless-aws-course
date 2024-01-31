@@ -1,7 +1,13 @@
 export default {
   type: "object",
   properties: {
-    title: { type: "string" },
+    body: {
+      type: "object",
+      properties: {
+        title: { type: "string" },
+      },
+      required: ["title"],
+    },
   },
-  required: ["title"],
+  required: ["body"],
 } as const;

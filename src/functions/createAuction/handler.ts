@@ -6,6 +6,8 @@ import { DynamoDB } from "aws-sdk";
 import schema from "./schema";
 import { AuctionStatus } from "./status.enum";
 import { InternalServerError } from "http-errors";
+import validator from "@middy/validator";
+import { transpileSchema } from "@middy/validator/transpile";
 
 const dynamoDB = new DynamoDB.DocumentClient();
 
@@ -14,12 +16,15 @@ const createAuction: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (
 ) => {
   const { title } = event.body;
   const now = new Date();
+  const endDate = new Date();
+  endDate.setHours(now.getHours() + 1);
 
   const auction = {
     id: uuid(),
     title,
     status: AuctionStatus.OPEN,
     createdAt: now.toISOString(),
+    endingAt: endDate.toISOString(),
     highestBid: {
       amount: 0,
     },
@@ -33,10 +38,18 @@ const createAuction: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (
       })
       .promise();
   } catch (error) {
+    console.log(error);
     throw new InternalServerError(error);
   }
 
   return formatJSONResponse(auction, 201);
 };
 
-export const main = middyfy(createAuction);
+export const main = middyfy(createAuction).use(
+  validator({
+    eventSchema: transpileSchema(schema, {
+      useDefaults: true,
+      strict: false,
+    }),
+  })
+);
