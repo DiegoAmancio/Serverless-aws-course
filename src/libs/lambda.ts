@@ -4,8 +4,6 @@ import httpEventNormalizer from "@middy/http-event-normalizer";
 import middyJsonBodyParser from "@middy/http-json-body-parser";
 
 export const middyfy = (handler) =>
-  middy(handler).use([
-    middyJsonBodyParser(),
-    httpEventNormalizer(),
-    httpErrorHandler(),
-  ]);
+  middy()
+    .use([middyJsonBodyParser(), httpEventNormalizer(), httpErrorHandler()])
+    .handler(handler);

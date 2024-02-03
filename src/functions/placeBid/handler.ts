@@ -6,10 +6,22 @@ import schema from "./schema";
 import { InternalServerError } from "http-errors";
 import { getAuctionById } from "@functions/getAuction/handler";
 import { Forbidden } from "http-errors";
+import { AuctionStatus } from "@functions/createAuction/status.enum";
+import validator from "@middy/validator";
+import { transpileSchema } from "@middy/validator/transpile";
 
 const dynamoDB = new DynamoDB.DocumentClient();
 
-const checkAuction = (amount: number, auction) => {
+const checkAuction = (
+  { amount, bidderEmail }: { amount: number; bidderEmail: string },
+  auction
+) => {
+  if (auction.seller === bidderEmail) {
+    throw new Forbidden("You cannot bid your own auction");
+  }
+  if (auction.status !== AuctionStatus.OPEN) {
+    throw new Forbidden("You cannot bid on closed auctions");
+  }
   if (amount <= auction.highestBid.amount) {
     throw new Forbidden(
       `Your bid must be higher than ${auction.highestBid.amount}`
@@ -21,17 +33,20 @@ const placeBid: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (
 ) => {
   const { id } = event.pathParameters;
   const { amount } = event.body;
+  const { email } = event.requestContext.authorizer;
 
   const auction = await getAuctionById(id);
 
-  checkAuction(amount, auction);
+  checkAuction({ amount: Number(amount), bidderEmail: email }, auction);
 
   const params = {
     TableName: process.env.AUCTIONS_TABLE_NAME,
     Key: { id },
-    UpdateExpression: "set highestBid.amount = :amount",
+    UpdateExpression:
+      "set highestBid.amount = :amount, highestBid.bidder = :bidder",
     ExpressionAttributeValues: {
       ":amount": amount,
+      ":bidder": email,
     },
     ReturnValues: "ALL_NEW",
   };
@@ -44,4 +59,11 @@ const placeBid: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (
   }
 };
 
-export const main = middyfy(placeBid);
+export const main = middyfy(placeBid).use(
+  validator({
+    eventSchema: transpileSchema(schema, {
+      useDefaults: true,
+      strict: false,
+    }),
+  })
+);

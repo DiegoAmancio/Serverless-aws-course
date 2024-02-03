@@ -3,6 +3,7 @@ import type { AWS } from "@serverless/typescript";
 import createAuction from "@functions/createAuction";
 import auctionsTable from "@resources/auctionsTable";
 import auctionsTableIam from "@iam/auctionsTableIam";
+import mailQueueIam from "@iam/mailQueueIam";
 import getAuctions from "@functions/getAuctions";
 import getAuction from "@functions/getAuction";
 import placeBid from "@functions/placeBid";
@@ -27,10 +28,11 @@ const serverlessConfiguration: AWS = {
       AUCTIONS_TABLE_NAME: {
         Ref: "AuctionsTable",
       },
+      MAIL_QUEUE_URL: "${self:custom.MailQueue.url}",
     },
     iam: {
       role: {
-        statements: [auctionsTableIam],
+        statements: [auctionsTableIam, mailQueueIam],
       },
     },
   },
@@ -48,6 +50,12 @@ const serverlessConfiguration: AWS = {
   },
   package: { individually: true },
   custom: {
+    MailQueue: {
+      arn: "${cf:notification-service-${self:provider.stage}.MailQueueArn}",
+      url: "${cf:notification-service-${self:provider.stage}.MailQueueUrl}",
+    },
+    authorizer:
+      "arn:aws:lambda:${self:provider.region}:${aws:accountId}:function:serverless-auth0-authorizer-${self:provider.stage}-auth",
     esbuild: {
       bundle: true,
       minify: false,
