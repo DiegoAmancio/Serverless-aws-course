@@ -2,12 +2,18 @@ import type { AWS } from "@serverless/typescript";
 
 import createAuction from "@functions/createAuction";
 import auctionsTable from "@resources/auctionsTable";
+import {
+  auctionsBucket,
+  auctionsBucketPolicy,
+} from "@resources/auctionsBucket";
 import auctionsTableIam from "@iam/auctionsTableIam";
+import auctionsBucketIAM from "@iam/auctionsBucketIAM";
 import mailQueueIam from "@iam/mailQueueIam";
 import getAuctions from "@functions/getAuctions";
 import getAuction from "@functions/getAuction";
 import placeBid from "@functions/placeBid";
 import processAuctions from "@functions/processAuctions";
+import uploadAuction from "@functions/uploadAuction";
 
 const serverlessConfiguration: AWS = {
   service: "curso-aws",
@@ -29,16 +35,19 @@ const serverlessConfiguration: AWS = {
         Ref: "AuctionsTable",
       },
       MAIL_QUEUE_URL: "${self:custom.MailQueue.url}",
+      AUCTIONS_BUCKET_NAME: "${self:custom.AuctionsBucket.name}",
     },
     iam: {
       role: {
-        statements: [auctionsTableIam, mailQueueIam],
+        statements: [auctionsTableIam, mailQueueIam, auctionsBucketIAM],
       },
     },
   },
   resources: {
     Resources: {
       AuctionsTable: auctionsTable,
+      AuctionsBucket: auctionsBucket,
+      AuctionsBucketPolicy: auctionsBucketPolicy,
     },
   },
   functions: {
@@ -47,9 +56,19 @@ const serverlessConfiguration: AWS = {
     getAuction,
     placeBid,
     processAuctions,
+    uploadAuction,
   },
   package: { individually: true },
   custom: {
+    AuctionsBucket: {
+      name: "auctions-bucket-sj19asxz-${self:provider.stage}",
+    },
+    AuctionsTable: {
+      name: {
+        REF: "AuctionsTable",
+      },
+      arn: { "Fn::GetAtt": ["AuctionsTable", "Arn"] },
+    },
     MailQueue: {
       arn: "${cf:notification-service-${self:provider.stage}.MailQueueArn}",
       url: "${cf:notification-service-${self:provider.stage}.MailQueueUrl}",
